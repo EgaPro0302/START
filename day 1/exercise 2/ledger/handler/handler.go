@@ -43,6 +43,7 @@ func HandlerTransactionGet(w http.ResponseWriter, r *http.Request) {
 	mtx.Lock()
 	defer mtx.Unlock()
 	if len(paypal) == 0 {
+		w.Header().Set("Content-Type", "text/plain")
 		_, err := w.Write([]byte(text))
 		if err != nil {
 			http.Error(w, "Error Print", http.StatusInternalServerError)
