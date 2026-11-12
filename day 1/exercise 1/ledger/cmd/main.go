@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	//было созданы time для хоть какого то оживляения
 	fmt.Println("Запуск сервера!")
 	time.Sleep(2 * time.Second)
 	fmt.Println("Сервер запущен")
