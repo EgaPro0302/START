@@ -97,7 +97,7 @@ func HandlerTransactionDELETE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error Method", http.StatusMethodNotAllowed)
 		return
 	}
-	id := r.PathValue("ID")
+	id := r.PathValue("id")
 	RealID, err := strconv.Atoi(id)
 	if err != nil {
 		http.Error(w, "Error ID", http.StatusBadRequest)
@@ -116,12 +116,19 @@ func HandlerTransactionDELETE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var paypalFAKE []models.Transaction
+	var found bool = false
 	for _, v := range paypal {
 		if RealID == v.ID {
 			fmt.Println("пользователь удалил значение")
+			found = true
+
 		} else {
 			paypalFAKE = append(paypalFAKE, v)
 		}
+	}
+	if !found {
+		http.Error(w, "NOT FOUND", http.StatusNotFound)
+		return
 	}
 	paypal = paypalFAKE
 
@@ -157,12 +164,19 @@ func HandlerTRansactionGETID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var paypalFAKE []models.Transaction
+	var found bool = false
 	for _, v := range paypal {
 		if RealID == v.ID {
 			paypalFAKE = append(paypalFAKE, v)
+			found = true
 			return
 		}
 	}
+	if !found {
+		http.Error(w, "NOT FOUND", http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(paypalFAKE); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
