@@ -41,18 +41,19 @@ func HandlerTransactionGet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	text := "Операций не было, своершите хотя бы 1 что бы увидить историю покупок"
 	mtx.Lock()
+	defer mtx.Unlock()
 	if len(paypal) == 0 {
 		_, err := w.Write([]byte(text))
 		if err != nil {
 			http.Error(w, "Error Print", http.StatusInternalServerError)
 			return
 		}
+		return
 	}
 	if err := json.NewEncoder(w).Encode(paypal); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
 		return
 	}
-	mtx.Unlock()
 
 }
 
@@ -70,9 +71,11 @@ func HandlerTransactionPost(w http.ResponseWriter, r *http.Request) {
 	mtx.Lock()
 	paypal = append(paypal, tp)
 	mtx.Unlock()
+	w.WriteHeader(http.StatusCreated)
+
 	if err := json.NewEncoder(w).Encode(paypal); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
+
 }
