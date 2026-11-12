@@ -16,8 +16,11 @@ func HedlerGet(w http.ResponseWriter, r *http.Request) {
 	response := models.Health{
 		Status: "ok",
 	}
-	json.NewEncoder(w).Encode(response)
 	w.WriteHeader(200)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "error json", http.StatusInternalServerError)
+		return
+	}
 	fmt.Println("на сервере все хорошо!")
 
 }
