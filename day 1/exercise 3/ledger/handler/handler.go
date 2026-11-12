@@ -106,8 +106,14 @@ func HandlerTransactionDELETE(w http.ResponseWriter, r *http.Request) {
 
 	mtx.Lock()
 	defer mtx.Unlock()
-	if len(paypal) < RealID {
-		http.Error(w, "Error ID", http.StatusNotFound)
+	var found1 = false
+	for _, v := range paypal {
+		if RealID == v.ID {
+			found1 = true
+		}
+	}
+	if !found1 {
+		http.Error(w, "NOT FOUND", http.StatusNotFound)
 		return
 	}
 	if len(paypal) == 0 {
@@ -154,6 +160,16 @@ func HandlerTRansactionGETID(w http.ResponseWriter, r *http.Request) {
 	}
 	mtx.Lock()
 	defer mtx.Unlock()
+	var found1 bool = false
+	for _, v := range paypal {
+		if RealID == v.ID {
+			found1 = true
+		}
+	}
+	if !found1 {
+		http.Error(w, "NOT FOUND", http.StatusNotFound)
+		return
+	}
 	if len(paypal) == 0 {
 		w.Header().Set("Content-Type", "text/plain")
 		_, err := w.Write([]byte(text))
