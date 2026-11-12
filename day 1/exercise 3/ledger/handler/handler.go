@@ -131,7 +131,7 @@ func HandlerTransactionDELETE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	paypal = paypalFAKE
-
+	w.WriteHeader(http.StatusNoContent)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(paypal); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
@@ -169,14 +169,12 @@ func HandlerTRansactionGETID(w http.ResponseWriter, r *http.Request) {
 		if RealID == v.ID {
 			paypalFAKE = append(paypalFAKE, v)
 			found = true
-			return
 		}
 	}
 	if !found {
 		http.Error(w, "NOT FOUND", http.StatusNotFound)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(paypalFAKE); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
