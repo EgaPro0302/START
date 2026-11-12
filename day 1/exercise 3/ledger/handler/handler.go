@@ -132,11 +132,6 @@ func HandlerTransactionDELETE(w http.ResponseWriter, r *http.Request) {
 	}
 	paypal = paypalFAKE
 	w.WriteHeader(http.StatusNoContent)
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(paypal); err != nil {
-		http.Error(w, "error Encoder", http.StatusInternalServerError)
-		return
-	}
 
 }
 
@@ -163,11 +158,11 @@ func HandlerTRansactionGETID(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	var paypalFAKE []models.Transaction
+	var paypalFAKE models.Transaction
 	var found bool = false
 	for _, v := range paypal {
 		if RealID == v.ID {
-			paypalFAKE = append(paypalFAKE, v)
+			paypalFAKE = v
 			found = true
 		}
 	}
