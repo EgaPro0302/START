@@ -22,6 +22,7 @@ func HendlerGet(w http.ResponseWriter, r *http.Request) {
 	response := models.Health{
 		Status: "ok",
 	}
+
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
 		return
@@ -38,10 +39,20 @@ func HandlerTransactionGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	text := "Операций не было, своершите хотя бы 1 что бы увидить историю покупок"
+	mtx.Lock()
+	if len(paypal) == 0 {
+		_, err := w.Write([]byte(text))
+		if err != nil {
+			http.Error(w, "Error Print", http.StatusInternalServerError)
+			return
+		}
+	}
 	if err := json.NewEncoder(w).Encode(paypal); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
 		return
 	}
+	mtx.Unlock()
 
 }
 
@@ -53,10 +64,9 @@ func HandlerTransactionPost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var tp models.Transaction
 	if err := json.NewDecoder(r.Body).Decode(&tp); err != nil {
-		http.Error(w, "Error Decoder", http.StatusInternalServerError)
+		http.Error(w, "Error Decoder", http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 	mtx.Lock()
 	paypal = append(paypal, tp)
 	mtx.Unlock()
@@ -64,4 +74,5 @@ func HandlerTransactionPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusCreated)
 }
