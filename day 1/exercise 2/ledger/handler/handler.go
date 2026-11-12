@@ -38,7 +38,7 @@ func HandlerTransactionGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error Method,", http.StatusMethodNotAllowed)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+
 	text := "Операций не было, своершите хотя бы 1 что бы увидить историю покупок"
 	mtx.Lock()
 	defer mtx.Unlock()
@@ -50,6 +50,7 @@ func HandlerTransactionGet(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(paypal); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
 		return
