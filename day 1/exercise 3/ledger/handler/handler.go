@@ -12,6 +12,7 @@ import (
 // без бз было тяжело, пришлось сделать так! не сдить других способов не знаю
 var paypal = []models.Transaction{}
 var mtx sync.Mutex
+var text = "Операций не было, своершите хотя бы 1 что бы увидить историю покупок"
 
 // проверить статус
 func HendlerGet(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +41,6 @@ func HandlerTransactionGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	text := "Операций не было, своершите хотя бы 1 что бы увидить историю покупок"
 	mtx.Lock()
 	defer mtx.Unlock()
 	if len(paypal) == 0 {
@@ -103,7 +103,7 @@ func HandlerTransactionDELETE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error ID", http.StatusBadRequest)
 		return
 	}
-	text := "Операций не было, своершите хотя бы 1 что бы увидить историю покупок"
+
 	mtx.Lock()
 	defer mtx.Unlock()
 	if len(paypal) == 0 {
@@ -127,6 +127,44 @@ func HandlerTransactionDELETE(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(paypal); err != nil {
+		http.Error(w, "error Encoder", http.StatusInternalServerError)
+		return
+	}
+
+}
+
+// найти по айди
+func HandlerTRansactionGETID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Error Method", http.StatusMethodNotAllowed)
+		return
+	}
+	id := r.PathValue("id")
+	RealID, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, "Error ID", http.StatusBadRequest)
+		return
+	}
+	mtx.Lock()
+	defer mtx.Unlock()
+	if len(paypal) == 0 {
+		w.Header().Set("Content-Type", "text/plain")
+		_, err := w.Write([]byte(text))
+		if err != nil {
+			http.Error(w, "Error Print", http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+	var paypalFAKE []models.Transaction
+	for _, v := range paypal {
+		if RealID == v.ID {
+			paypalFAKE = append(paypalFAKE, v)
+			return
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(paypalFAKE); err != nil {
 		http.Error(w, "error Encoder", http.StatusInternalServerError)
 		return
 	}
