@@ -81,11 +81,3 @@ func HandlerTransactionPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
-
-// найти по айди
-func HandlerTRansactionGET(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Error Method", http.StatusMethodNotAllowed)
-		return
-	}
-}
