@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"study/RuBank/models"
 	"study/RuBank/service"
+
+	"github.com/gorilla/mux"
 )
 
 type UserHandler struct {
@@ -20,7 +22,7 @@ func NewUserHandler(serv *service.UserService) *UserHandler {
 var text = "User Not Found"
 
 func (h *UserHandler) GetId(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
+	id := mux.Vars(r)["id"]
 	RealId, err := strconv.Atoi(id)
 	if err != nil {
 		w.WriteHeader(400)
@@ -97,6 +99,13 @@ func (h *UserHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Bad Request", 400)
 			return
 		}
+		w.WriteHeader(500)
+		return
+	}
+	text := "Success"
+	_, err := w.Write([]byte(text))
+	if err != nil {
+		http.Error(w, "Error on Server", 500)
 		return
 	}
 
