@@ -28,7 +28,6 @@ func main() {
 
 	//читаем ее
 	DB_URL := os.Getenv("DB_url")
-	fmt.Println(DB_URL)
 
 	//подключаем pgx
 	pool, err := pgxpool.New(ctx, DB_URL)

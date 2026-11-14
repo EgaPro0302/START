@@ -31,6 +31,7 @@ func (h *UserHandler) GetId(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Error on Server", 500)
 			return
 		}
+		w.WriteHeader(500)
 		return
 	}
 	errortext := models.ErrorText{
@@ -49,8 +50,10 @@ func (h *UserHandler) GetId(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Error Encoder", 500)
 				return
 			}
+			w.WriteHeader(500)
 			return
 		}
+		w.WriteHeader(500)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -64,14 +67,14 @@ func (h *UserHandler) GetId(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) CreateAcc(w http.ResponseWriter, r *http.Request) {
 	var RealUser models.Users
 	if err := json.NewDecoder(r.Body).Decode(&RealUser); err != nil {
-		http.Error(w, "Error Dcoder", 500)
+		http.Error(w, "Bad Request", 400)
 		return
 	}
 	if err := h.serv.CreateAcc(r.Context(), &RealUser); err != nil {
 		http.Error(w, "Failed Create Account", 500)
 		return
 	}
-
+	w.WriteHeader(201)
 	if err := json.NewEncoder(w).Encode(RealUser); err != nil {
 		http.Error(w, "Error Encoder", 500)
 		return
@@ -82,7 +85,7 @@ func (h *UserHandler) CreateAcc(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 	var realCheck models.Check
 	if err := json.NewDecoder(r.Body).Decode(&realCheck); err != nil {
-		http.Error(w, "Error Dcoder", 500)
+		http.Error(w, "Bad Request", 400)
 		return
 	}
 	if err := h.serv.Transfer(r.Context(), realCheck.From_account_id, realCheck.To_account_id, realCheck.Amount); err != nil {
