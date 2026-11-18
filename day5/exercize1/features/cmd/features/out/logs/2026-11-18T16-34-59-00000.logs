@@ -1,0 +1,5 @@
+2026-11-18T19-34-59-00000	FATAL	cmd/main.go:33	Error load .nv file
+main.main
+	/home/Egor/Рабочий стол/START/day5/exercize1/features/cmd/main.go:33
+runtime.main
+	/usr/lib/golang/src/runtime/proc.go:290
