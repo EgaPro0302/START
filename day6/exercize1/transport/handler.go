@@ -2,21 +2,35 @@ package transport
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"study/core"
 )
 
 var Nodes []core.Node
 var ID int
 
+
 func PostNode(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	decode := json.NewDecoder(r.Body)
+	decode.DisallowUnknownFields()
+
 	var node core.DTONode
-	if err := json.NewDecoder(r.Body).Decode(&node); err != nil {
-		http.Error(w, "Bad Request", 400)
+	if err := decode.Decode(&node); err != nil {
+		var MaxBytesReader *http.MaxBytesError
+		if errors.As(err, &MaxBytesReader) {
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+		http.Error(w, "Error Json", 400)
 		return
 	}
+	node.Title = strings.TrimSpace(node.Title)
+	node.Description = strings.TrimSpace(node.Description)
 	// учтем что бы в нашем блокноте было все обязательно, две строки!
 	if node.Title == "" && node.Description == "" {
 		http.Error(w, "Bad Request", 400)
