@@ -9,10 +9,12 @@ import (
 	"strconv"
 	"strings"
 	"study/core"
+	"sync"
 )
 
-var Nodes []core.Node
+var Nodes = make([]core.Node, 0)
 var ID int
+var mtx sync.Mutex
 
 func PostNode(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
@@ -30,6 +32,11 @@ func PostNode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := decode.Decode(&struct{}{}); err != io.EOF {
+		var MaxBytesReader *http.MaxBytesError
+		if errors.As(err, &MaxBytesReader) {
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
 		http.Error(w, "body must contain only one JSON  object", 400)
 		return
 	}
@@ -40,6 +47,7 @@ func PostNode(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", 400)
 		return
 	}
+	mtx.Lock()
 	ID++
 	RealNode := core.Node{
 		ID:          ID,
@@ -47,6 +55,7 @@ func PostNode(w http.ResponseWriter, r *http.Request) {
 		Description: node.Description,
 	}
 	Nodes = append(Nodes, RealNode)
+	mtx.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 	if err := json.NewEncoder(w).Encode(RealNode); err != nil {
@@ -76,14 +85,14 @@ func GetByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error Bad Request", 400)
 		return
 	}
-	var f bool = false
+	found := false
 	for _, v := range Nodes {
 		if v.ID == RealID {
 			node = v
-			f = true
+			found = true
 		}
 	}
-	if !f {
+	if !found {
 		http.Error(w, "Error Not Found", 404)
 		return
 	}
