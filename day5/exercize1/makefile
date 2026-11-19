@@ -1,5 +1,5 @@
 # Подключаем переменные из .env
-include .env
+-include .env
 export
 # Имя Docker-сети, чтобы контейнеры видели друг друга
 NETWORK=my-net
@@ -27,7 +27,7 @@ go-test:
 
 # --- Docker: База данных ---
 docker-create-sql:
-	docker run --name postgres-run --network $(NETWORK) -e "$(PASS)" -d -v "$(PWD)/out/postgres:/var/lib/postgresql" -p 5432:5432 postgres:18-bookworm
+	docker run --name postgres-run --network $(NETWORK) -e POSTGRES_PASSWORD=$(PASS)" -d -v "$(PWD)/out/postgres:/var/lib/postgresql" -p 5432:5432 postgres:18-bookworm
 
 docker-kill:
 	docker kill postgres-run
