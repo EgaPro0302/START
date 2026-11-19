@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,7 +13,6 @@ import (
 
 var Nodes []core.Node
 var ID int
-
 
 func PostNode(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
@@ -29,10 +29,14 @@ func PostNode(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error Json", 400)
 		return
 	}
+	if err := decode.Decode(&struct{}{}); err != io.EOF {
+		http.Error(w, "body must contain only one JSON  object", 400)
+		return
+	}
 	node.Title = strings.TrimSpace(node.Title)
 	node.Description = strings.TrimSpace(node.Description)
 	// учтем что бы в нашем блокноте было все обязательно, две строки!
-	if node.Title == "" && node.Description == "" {
+	if node.Title == "" || node.Description == "" {
 		http.Error(w, "Bad Request", 400)
 		return
 	}
@@ -68,10 +72,20 @@ func GetByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID Bad Request!", 400)
 		return
 	}
+	if RealID <= 0 {
+		http.Error(w, "Error Bad Request", 400)
+		return
+	}
+	var f bool = false
 	for _, v := range Nodes {
 		if v.ID == RealID {
 			node = v
+			f = true
 		}
+	}
+	if !f {
+		http.Error(w, "Error Not Found", 404)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(node); err != nil {
