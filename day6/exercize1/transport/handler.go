@@ -14,7 +14,7 @@ import (
 
 var Nodes = make([]core.Node, 0)
 var ID int
-var mtx sync.Mutex
+var mtx sync.RWMutex
 
 func PostNode(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
@@ -66,8 +66,12 @@ func PostNode(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetNode(w http.ResponseWriter, r *http.Request) {
+	mtx.RLock()
+	nodes := make([]core.Node, len(Nodes))
+	copy(nodes, Nodes)
+	mtx.RUnlock()
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(Nodes); err != nil {
+	if err := json.NewEncoder(w).Encode(nodes); err != nil {
 		fmt.Println("Error Encoder {Get}")
 		return
 	}
@@ -75,7 +79,6 @@ func GetNode(w http.ResponseWriter, r *http.Request) {
 
 func GetByID(w http.ResponseWriter, r *http.Request) {
 	ID := r.PathValue("id")
-	var node core.Node
 	RealID, err := strconv.Atoi(ID)
 	if err != nil {
 		http.Error(w, "ID Bad Request!", 400)
@@ -85,13 +88,19 @@ func GetByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error Bad Request", 400)
 		return
 	}
+	mtx.RLock()
+	nodes := make([]core.Node, len(Nodes))
+	copy(nodes, Nodes)
+	var node core.Node
 	found := false
-	for _, v := range Nodes {
+	for _, v := range nodes {
 		if v.ID == RealID {
 			node = v
 			found = true
+			break
 		}
 	}
+	mtx.RUnlock()
 	if !found {
 		http.Error(w, "Error Not Found", 404)
 		return
