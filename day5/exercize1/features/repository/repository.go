@@ -9,28 +9,26 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 )
 
 type TaskRepository struct {
 	pool *pgxpool.Pool
+	zap  *zap.Logger
 }
 
-func NewTaskRepository(pool *pgxpool.Pool) *TaskRepository {
-	return &TaskRepository{pool: pool}
+func NewTaskRepository(pool *pgxpool.Pool, zap *zap.Logger) *TaskRepository {
+	return &TaskRepository{pool: pool, zap: zap}
 }
 
 func (r *TaskRepository) GetAll(ctx context.Context) ([]core.Tasks, error) {
-	logger, loggerClose, err := core.NewLogs("DEBUG")
-	if err != nil {
-		panic(err)
-	}
-	defer loggerClose()
+
 	rows, err := r.pool.Query(
 		ctx,
 		"SELECT id, title, description, completed, created_at, completed_at FROM tasks",
 	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("%sError:", err))
+		r.zap.Error(fmt.Sprintf("%sError:", err))
 		return nil, err
 	}
 	defer rows.Close()
@@ -45,7 +43,7 @@ func (r *TaskRepository) GetAll(ctx context.Context) ([]core.Tasks, error) {
 			&t.CreatedAt,
 			&t.CompletedAt,
 		); err != nil {
-			logger.Error(fmt.Sprintf("%sError:", err))
+			r.zap.Error(fmt.Sprintf("%sError:", err))
 			return nil, err
 		}
 		tasks = append(tasks, t)
@@ -53,17 +51,12 @@ func (r *TaskRepository) GetAll(ctx context.Context) ([]core.Tasks, error) {
 	if rows.Err() != nil {
 		return nil, rows.Err()
 	}
-	logger.Info("Get All Task")
+	r.zap.Info("Get All Task")
 	return tasks, nil
 }
 
 // показать task по id
 func (r *TaskRepository) GetByID(ctx context.Context, id int) (core.Tasks, error) {
-	logger, loggerClose, err := core.NewLogs("DEBUG")
-	if err != nil {
-		panic(err)
-	}
-	defer loggerClose()
 	var t core.Tasks
 	if err := r.pool.QueryRow(ctx,
 		"SELECT id, title, description, completed, created_at, completed_at FROM tasks WHERE id = $1",
@@ -79,20 +72,15 @@ func (r *TaskRepository) GetByID(ctx context.Context, id int) (core.Tasks, error
 		if errors.Is(err, pgx.ErrNoRows) { // проверяем, что это именно "не найдено"
 			return core.Tasks{}, core.ErrNotFound
 		}
-		logger.Error(fmt.Sprintf("%s   <-Error", err))
+		r.zap.Error(fmt.Sprintf("%s   <-Error", err))
 		return core.Tasks{}, err
 	}
-	logger.Info("GetById Task!")
+	r.zap.Info("GetById Task!")
 	return t, nil
 }
 
 // создаем TASK
 func (r *TaskRepository) Created(ctx context.Context, t core.Tasks) (core.Tasks, error) {
-	logger, loggerClose, err := core.NewLogs("DEBUG")
-	if err != nil {
-		panic(err)
-	}
-	defer loggerClose()
 	if err := r.pool.QueryRow(
 		ctx,
 		`
@@ -109,45 +97,35 @@ func (r *TaskRepository) Created(ctx context.Context, t core.Tasks) (core.Tasks,
 		&t.CreatedAt,
 		&t.CompletedAt,
 	); err != nil {
-		logger.Error(fmt.Sprintf("%serror:", err))
+		r.zap.Error(fmt.Sprintf("%serror:", err))
 		return core.Tasks{}, err
 	}
-	logger.Info("Created Task")
+	r.zap.Info("Created Task")
 
 	return t, nil
 }
 
 // delete task
 func (r *TaskRepository) Delete(ctx context.Context, id int) error {
-	logger, loggerClose, err := core.NewLogs("DEBUG")
-	if err != nil {
-		panic(err)
-	}
-	defer loggerClose()
 	res, err := r.pool.Exec(
 		ctx,
 		"DELETE FROM tasks WHERE id =$1",
 		id,
 	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("%sError:", err))
+		r.zap.Error(fmt.Sprintf("%sError:", err))
 		return err
 	}
 	if res.RowsAffected() == 0 {
-		logger.Info("Пользователь не нашел такую задачу!")
+		r.zap.Info("Пользователь не нашел такую задачу!")
 		return pgx.ErrNoRows
 	}
-	logger.Info("user Success delete task")
+	r.zap.Info("user Success delete task")
 	return nil
 }
 
 // изменяем задачу на выполненую
 func (r *TaskRepository) UpdateStatus(ctx context.Context, id int, completed bool, completed_at *time.Time) (core.Tasks, error) {
-	logger, loggerClose, err := core.NewLogs("DEBUG")
-	if err != nil {
-		panic(err)
-	}
-	defer loggerClose()
 	var updateTask core.Tasks
 	if err := r.pool.QueryRow(
 		ctx,
@@ -162,22 +140,17 @@ func (r *TaskRepository) UpdateStatus(ctx context.Context, id int, completed boo
 		&updateTask.CompletedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			logger.Info("tast Not Found")
+			r.zap.Info("tast Not Found")
 			return core.Tasks{}, pgx.ErrNoRows
 		}
-		logger.Error(fmt.Sprintf("%sError:", err))
+		r.zap.Error(fmt.Sprintf("%sError:", err))
 		return core.Tasks{}, err
 	}
-	logger.Info("users Success completed task")
+	r.zap.Info("users Success completed task")
 	return updateTask, nil
 }
 
 func (r *TaskRepository) UpdateContent(ctx context.Context, title string, id int, description string) (core.Tasks, error) {
-	logger, loggerClose, err := core.NewLogs("DEBUG")
-	if err != nil {
-		panic(err)
-	}
-	defer loggerClose()
 	var updateTask core.Tasks
 	if err := r.pool.QueryRow(
 		ctx,
@@ -192,13 +165,13 @@ func (r *TaskRepository) UpdateContent(ctx context.Context, title string, id int
 		&updateTask.CompletedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			logger.Info("tast Not Found")
+			r.zap.Info("tast Not Found")
 			return core.Tasks{}, pgx.ErrNoRows
 		}
-		logger.Error(fmt.Sprintf("%sError", err))
+		r.zap.Error(fmt.Sprintf("%sError", err))
 		return core.Tasks{}, err
 	}
 
-	logger.Info("user Success Update Task")
+	r.zap.Info("user Success Update Task")
 	return updateTask, nil
 }

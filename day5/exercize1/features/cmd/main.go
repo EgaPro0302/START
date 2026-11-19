@@ -9,6 +9,7 @@ import (
 	repositry "study/features/repository"
 	"study/features/service"
 	"study/features/transport"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,7 +20,6 @@ func main() {
 	//создаем нужные подключения
 	var ctx = context.Background()
 	r := mux.NewRouter()
-	var ctxTime:= context.WithTimeout()
 
 	//подключаем логгирование
 	logger, loggerClose, err := core.NewLogs("DEBUG")
@@ -40,7 +40,10 @@ func main() {
 		return
 	}
 	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
+
+	PingCtx, close := context.WithTimeout(ctx, 5*time.Second)
+	defer close()
+	if err := pool.Ping(PingCtx); err != nil {
 		fmt.Println("Error pool Ping:", err)
 		return
 	}
@@ -48,9 +51,9 @@ func main() {
 	logger.Info("SUCCESS")
 	fmt.Println("DB OK!")
 
-	repo := repositry.NewTaskRepository(pool)
-	serv := service.NewTaskService(repo)
-	h := transport.NewTaskHandler(serv)
+	repo := repositry.NewTaskRepository(pool, logger)
+	serv := service.NewTaskService(repo, logger)
+	h := transport.NewTaskHandler(serv, logger)
 	r.HandleFunc("/task/{id}/completed", h.UpdateStatus).Methods("PATCH") //работает оишбок не вижу
 	r.HandleFunc("/task/{id}", h.UpdateContent).Methods("PUT")            //работает оишбок не вижу
 	r.HandleFunc("/task/{id}", h.Delete).Methods("DELETE")                //работает оишбок не вижу

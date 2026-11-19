@@ -27,7 +27,7 @@ go-test:
 
 # --- Docker: База данных ---
 docker-create-sql:
-	docker run --name postgres-run --network $(NETWORK) -e POSTGRES_PASSWORD=qwnm23 -d -v "$(PWD)/out/postgres:/var/lib/postgresql" -p 5432:5432 postgres:18-bookworm
+	docker run --name postgres-run --network $(NETWORK) -e "$(PASS)" -d -v "$(PWD)/out/postgres:/var/lib/postgresql" -p 5432:5432 postgres:18-bookworm
 
 docker-kill:
 	docker kill postgres-run

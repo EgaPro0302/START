@@ -1,1 +1,0 @@
-2026-11-18T20-43-46-00000	INFO	transport/handler.go:80	json: cannot unmarshal string into Go struct field DTOTask.completed of type boolBad Request:
