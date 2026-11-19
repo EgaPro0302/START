@@ -6,21 +6,21 @@ import (
 	"fmt"
 	"strings"
 	"study/core"
-	"study/features/repositry"
+	"study/features/repository"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 )
 
-type TaskServise struct {
-	repo *repositry.TaskRepository
+type TaskService struct {
+	repo *repository.TaskRepository
 }
 
-func NewTaskService(repo *repositry.TaskRepository) *TaskServise {
-	return &TaskServise{repo: repo}
+func NewTaskService(repo *repository.TaskRepository) *TaskService {
+	return &TaskService{repo: repo}
 }
 
-func (s *TaskServise) Get(ctx context.Context) ([]core.Tasks, error) {
+func (s *TaskService) GetAll(ctx context.Context) ([]core.Tasks, error) {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)
@@ -33,12 +33,12 @@ func (s *TaskServise) Get(ctx context.Context) ([]core.Tasks, error) {
 	}
 	if task == nil {
 		logger.Info("nil Tasks respons user")
-		return []core.Tasks{}, nil
+		return []core.Tasks{}, core.ErrNotFound
 	}
 	return task, nil
 }
 
-func (s *TaskServise) GetByID(ctx context.Context, id int) (core.Tasks, error) {
+func (s *TaskService) GetByID(ctx context.Context, id int) (core.Tasks, error) {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)
@@ -57,7 +57,7 @@ func (s *TaskServise) GetByID(ctx context.Context, id int) (core.Tasks, error) {
 
 }
 
-func (s *TaskServise) Create(ctx context.Context, t core.Tasks) (core.Tasks, error) {
+func (s *TaskService) Create(ctx context.Context, t core.Tasks) (core.Tasks, error) {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)
@@ -78,7 +78,7 @@ func (s *TaskServise) Create(ctx context.Context, t core.Tasks) (core.Tasks, err
 
 	return task, nil
 }
-func (s *TaskServise) DELETE(ctx context.Context, id int) error {
+func (s *TaskService) Delete(ctx context.Context, id int) error {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)
@@ -99,7 +99,7 @@ func (s *TaskServise) DELETE(ctx context.Context, id int) error {
 	return nil
 }
 
-func (s *TaskServise) UpdateStatus(ctx context.Context, completed bool, id int) (core.Tasks, error) {
+func (s *TaskService) UpdateStatus(ctx context.Context, completed bool, id int) (core.Tasks, error) {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)
@@ -122,7 +122,7 @@ func (s *TaskServise) UpdateStatus(ctx context.Context, completed bool, id int) 
 	return task, nil
 }
 
-func (s *TaskServise) UpdateContent(ctx context.Context, id int, title string, description string) (core.Tasks, error) {
+func (s *TaskService) UpdateContent(ctx context.Context, id int, title string, description string) (core.Tasks, error) {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)

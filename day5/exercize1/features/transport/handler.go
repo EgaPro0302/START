@@ -13,10 +13,10 @@ import (
 )
 
 type Taskhandler struct {
-	serv *service.TaskServise
+	serv *service.TaskService
 }
 
-func NewTaskHandler(serv *service.TaskServise) *Taskhandler {
+func NewTaskHandler(serv *service.TaskService) *Taskhandler {
 	return &Taskhandler{serv: serv}
 }
 
@@ -26,8 +26,17 @@ func (h *Taskhandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	defer loggerClose()
-	task, err := h.serv.Get(r.Context())
+	task, err := h.serv.GetAll(r.Context())
 	if err != nil {
+		if errors.Is(err, core.ErrNotFound) {
+			logger.Info("Task Not Found")
+			w.WriteHeader(404)
+			if err := json.NewEncoder(w).Encode(task); err != nil {
+				logger.Error(fmt.Sprintf("%sError encoding:", err))
+			}
+			return
+		}
+
 		logger.Error(fmt.Sprintf("%sError:", err))
 		http.Error(w, fmt.Sprintf("%sError:", err), 500)
 		return
@@ -81,12 +90,10 @@ func (h *Taskhandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", 400)
 		return
 	}
-	fmt.Println(dtotask)
 	task := core.Tasks{
 		Title:       dtotask.Title,
 		Description: dtotask.Description,
 	}
-	fmt.Println(task.Description)
 	realTask, err := h.serv.Create(r.Context(), task)
 	if err != nil {
 		logger.Error(fmt.Sprintf("%sError", err))
@@ -100,7 +107,7 @@ func (h *Taskhandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Taskhandler) DELETE(w http.ResponseWriter, r *http.Request) {
+func (h *Taskhandler) Delete(w http.ResponseWriter, r *http.Request) {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)
@@ -113,7 +120,7 @@ func (h *Taskhandler) DELETE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error ID request", 400)
 		return
 	}
-	if err := h.serv.DELETE(r.Context(), realID); err != nil {
+	if err := h.serv.Delete(r.Context(), realID); err != nil {
 		if errors.Is(err, core.ErrBadRequest) {
 			logger.Info(fmt.Sprintf("%sBad Request:", err))
 			http.Error(w, "Bad Request", 400)
@@ -129,11 +136,6 @@ func (h *Taskhandler) DELETE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(204)
-	if _, err := w.Write([]byte("Suceess")); err != nil {
-		logger.Error(fmt.Sprintf("%sError:", err))
-		http.Error(w, "Error Serv", 500)
-		return
-	}
 }
 
 func (h *Taskhandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +175,7 @@ func (h *Taskhandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Taskhandler) UPDATECONTENT(w http.ResponseWriter, r *http.Request) {
+func (h *Taskhandler) UpdateContent(w http.ResponseWriter, r *http.Request) {
 	logger, loggerClose, err := core.NewLogs("DEBUG")
 	if err != nil {
 		panic(err)

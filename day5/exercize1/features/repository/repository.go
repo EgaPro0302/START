@@ -1,4 +1,4 @@
-package repositry
+package repository
 
 import (
 	"context"
@@ -49,6 +49,9 @@ func (r *TaskRepository) GetAll(ctx context.Context) ([]core.Tasks, error) {
 			return nil, err
 		}
 		tasks = append(tasks, t)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	logger.Info("Get All Task")
 	return tasks, nil

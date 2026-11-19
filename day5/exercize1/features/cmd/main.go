@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"study/core"
-	"study/features/repositry"
+	repositry "study/features/repository"
 	"study/features/service"
 	"study/features/transport"
 
@@ -19,6 +19,7 @@ func main() {
 	//создаем нужные подключения
 	var ctx = context.Background()
 	r := mux.NewRouter()
+	var ctxTime:= context.WithTimeout()
 
 	//подключаем логгирование
 	logger, loggerClose, err := core.NewLogs("DEBUG")
@@ -34,7 +35,11 @@ func main() {
 	}
 	Database := os.Getenv("DB")
 	pool, err := pgxpool.New(ctx, Database)
-
+	if err != nil {
+		fmt.Println("Error poolNew:", err)
+		return
+	}
+	defer pool.Close()
 	if err := pool.Ping(ctx); err != nil {
 		fmt.Println("Error pool Ping:", err)
 		return
@@ -47,8 +52,8 @@ func main() {
 	serv := service.NewTaskService(repo)
 	h := transport.NewTaskHandler(serv)
 	r.HandleFunc("/task/{id}/completed", h.UpdateStatus).Methods("PATCH") //работает оишбок не вижу
-	r.HandleFunc("/task/{id}", h.UPDATECONTENT).Methods("PUT")            //работает оишбок не вижу
-	r.HandleFunc("/task/{id}", h.DELETE).Methods("DELETE")                //работает оишбок не вижу
+	r.HandleFunc("/task/{id}", h.UpdateContent).Methods("PUT")            //работает оишбок не вижу
+	r.HandleFunc("/task/{id}", h.Delete).Methods("DELETE")                //работает оишбок не вижу
 	r.HandleFunc("/task/{id}", h.GetbyID).Methods("GET")                  //работает оишбок не вижу
 	r.HandleFunc("/task", h.Create).Methods("POST")                       //работает оишбок не вижу
 	r.HandleFunc("/task", h.GetAll).Methods("GET")                        //работает оишбок не вижу
