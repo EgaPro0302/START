@@ -78,7 +78,7 @@ func (h *Taskhandler) Create(w http.ResponseWriter, r *http.Request) {
 	realTask, err := h.serv.Create(r.Context(), task)
 	if err != nil {
 		if errors.Is(err, core.ErrBadRequest) {
-			http.Error(w, "Bad Request", 500)
+			http.Error(w, "Bad Request", 400)
 			return
 		}
 		h.zap.Error(fmt.Sprintf("%sError", err))
